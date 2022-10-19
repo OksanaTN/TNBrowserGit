@@ -589,7 +589,7 @@ class MainProcess {
         oldWindows.forEach((item) => {
             item.close();
         });
-//
+
         if(this.settings.kasse == false)
         {
             process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
