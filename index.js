@@ -14,6 +14,13 @@ const path = require('path');
 const fs = require('fs');
 const Url = require('url');
 const axios = require("axios");
+const https = require('https');
+
+const agent = new https.Agent({
+    rejectUnauthorized: false
+});
+
+const os = require("os");
 const { version } = require('./package.json');
 const setDebug = require('./helpers/setDebug');
 const checkConnection = require('./helpers/checkConnection');
@@ -64,7 +71,8 @@ class MainProcess {
         this.closedWindowIndexes = [];
         this.isRedirectedToError = false;
         this.isOnline = null;
-        
+        this.hostName = os.hostname();
+
         this.settings = defaultSettings({
             version,
             workDirectory: this.workDirectory,
@@ -83,6 +91,8 @@ class MainProcess {
 
         this.setDebug(this.settings.debug);
 
+
+
         this.init();
     }
 
@@ -97,6 +107,8 @@ class MainProcess {
 
         this.isOnline = await checkConnection(this.settings.checkOnlineUrl);
         _logger.log(`isOnline: `, this.isOnline);
+
+
 
         await this.initSettings();
         this.initEvents();
@@ -115,10 +127,11 @@ class MainProcess {
     }
 
     async initSettings() {
-        _logger.log(`path: `, this.workDirectory);
+
         const settingsFilePath = path.resolve(
             `${this.workDirectory}/settings.json`
         );
+
 
         if (fs.existsSync(settingsFilePath)) {
             const settingsFile = fs.readFileSync(settingsFilePath, 'utf8');
@@ -130,10 +143,12 @@ class MainProcess {
                     ...settings,
                     isOnline: this.isOnline,
                 };
-                
-                if(this.settings.VRKiosk == true)
+
+                if(this.settings.kasse == false)
                 {
-                    axios.get("http://localhost:1880/tnbrowserurl").then((res) => {
+                    process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+                    axios.get("https://vr-kiosk.hosting10-plesk.tn-rechenzentrum1.de/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
+                        console.log(res);
                         if((typeof res.data != "undefined")&&(typeof res.data.location != "undefined"))
                         {
                             var expiration = new Date();
@@ -148,25 +163,98 @@ class MainProcess {
                                 { url: res.data.location, name: 'kunde_id', value: res.data.kunde_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
                                 { url: res.data.location, name: 'filial_id', value: res.data.filial_id.toString(), 'path':'/', expirationDate: expiration.getTime()}
                             ];
+
                             session.defaultSession.clearStorageData();
                             cookie_arr.forEach((cookie)=>{
                                 session.defaultSession.cookies.set(cookie)
-                                .then(() => {
-                                    // success
-                                }, (error) => {
-                                    console.error(error)
-                                })
-                            });                            
-                        }                                                
+                                    .then(() => {
+                                        // success
+                                    }, (error) => {
+                                        console.error(error)
+                                    })
+                            });
+                        }
                     }).catch(error => console.log(error));
+                } else {
+
+                    session.defaultSession.clearStorageData();
+
                 }
-                
+
                 this.settingsMigration();
             } catch (e) {
                 console.error(
                     `Something went wrong! settings.json is not JSON`
                 );
             }
+        } else {
+            var arr = {
+                width: 800,
+                height: 600,
+                kiosk: true,
+                title: "TN-Browser",
+                frame: true,
+                offlineUrl: "",
+                buttonPosition: "TOP_RIGHT",
+                buttonMargin: "10px 10px 10px 10px",
+                showMinimizeButton: false,
+                showOfflineButton: false,
+                minimizeIconUrl: "https://damfastore-magdeburg.kassesvn.tn-rechenzentrum1.de/img/fullscreen_close.png",
+                maximizeIconUrl: "https://damfastore-magdeburg.kassesvn.tn-rechenzentrum1.de/img/fullscreen_open.png",
+                splashScreenTimeout: 3000,
+                checkOnlineTimeout: 10000,
+                devShowPrintWindow: false,
+                showMenu: false,
+                isDev: false,
+                urls: [
+                    {
+                        url: "https://vr-kiosk.hosting10-plesk.tn-rechenzentrum1.de",
+                        displayId: 0,
+                        offlineUrl: "http://error.hosting10-plesk.tn-rechenzentrum1.de/",
+                        websiteUrl: "https://oksana.vr-kiosk.hosting11-plesk.tn-rechenzentrum1.de",
+                        zoom: 1
+                    }
+                ],
+                printFont: "Arial",
+                whitelist: [],
+                ticketPrinter: "Boca BIDI FGL 26/46 200 DPI",
+                changeFont: false,
+                guestwidth: 1020,
+                guestheight: 925,
+                checkOnlineUrl: "www.google.com",
+                VRKiosk: true,
+                isOnline: true,
+                kasse: true
+            };
+            this.saveSettingsInit('init', arr);
+            process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+            axios.get("https://vr-kiosk.hosting10-plesk.tn-rechenzentrum1.de/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
+                if((typeof res.data != "undefined")&&(typeof res.data.location != "undefined"))
+                {
+                    var expiration = new Date();
+                    var hour = expiration.getHours() + 24;
+                    expiration.setHours(hour);
+                    this.settings.urls[0].url = res.data.location;
+                    const cookie_arr = [
+                        { url: res.data.location, name: 'kasse_id', value: res.data.kasse_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'kasse_user_id', value: res.data.kasse_user_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'terminal_id', value: res.data.terminal_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'partner_id', value: res.data.partner_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'kunde_id', value: res.data.kunde_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'filial_id', value: res.data.filial_id.toString(), 'path':'/', expirationDate: expiration.getTime()}
+                    ];
+
+                    session.defaultSession.clearStorageData();
+                    cookie_arr.forEach((cookie)=>{
+                        session.defaultSession.cookies.set(cookie)
+                            .then(() => {
+                                // success
+                            }, (error) => {
+                                console.error(error)
+                            })
+                    });
+                }
+            }).catch(error => console.log(error));
         }
 
         setDebug(this.settings.debug);
@@ -186,7 +274,7 @@ class MainProcess {
             return item;
         });
     }
-    
+
 
     showNotification (title, body) {
         new Notification({ title: title, body: body }).show()
@@ -201,7 +289,7 @@ class MainProcess {
         this.ipcMain.on(
             'request-mainprocess-action',
             requestMainProcessAction.bind(this)
-        ); 
+        );
         this.ipcMain.on('print', onPrint.bind(this));
         this.ipcMain.on('printPdf', onPrintPDF.bind(this));
         this.ipcMain.on('readyToPrint', readyToPrint.bind(this));
@@ -260,7 +348,7 @@ class MainProcess {
                 allowedUrls.push(testUrl1.host, testUrl2.host);
             });
             this.settings.whitelist.forEach(element => {
-                let testUrl1 = Url.parse(element);                
+                let testUrl1 = Url.parse(element);
                 allowedUrls.push(testUrl1.host);
             });
             if(!allowedUrls.includes(testUrl.host))
@@ -278,49 +366,49 @@ class MainProcess {
             console.log(html);
                 // sending the HTML to the function extractLinks
                 // extractLinks(html)
-              }));  
+              }));
             */
 
         });
         if(this.settings.VRKiosk == true)
         {
-        win.webContents.on('new-window', (event, url, frameName, disposition, options, additionalFeatures, referrer, postBody) => {
-            event.preventDefault();
-            this.winG = null;
-            this.winG = new BrowserWindow({
-              webContents: options.webContents, // use existing webContents if provided
-              width: this.settings.guestwidth, 
-              height: this.settings.guestheight,
-              icon: './assets/favicon_new.ico',
-              show: false,
-              webPreferences: {
-                nativeWindowOpen: true,
-                webSecurity: false,
-                allowRunningInsecureContent: true,
-                enableRemoteModule: true,
-                preload: path.join(__dirname, 'preload.js'), // use a preload script
-            },
-            })
-            this.winG.setKiosk(false);
-            this.winG.removeMenu();
-            this.winG.once('ready-to-show', () => this.winG.show());
-            this.winG.on('closed', (event) => {
+            win.webContents.on('new-window', (event, url, frameName, disposition, options, additionalFeatures, referrer, postBody) => {
+                event.preventDefault();
                 this.winG = null;
+                this.winG = new BrowserWindow({
+                    webContents: options.webContents, // use existing webContents if provided
+                    width: this.settings.guestwidth,
+                    height: this.settings.guestheight,
+                    icon: './assets/favicon_new.ico',
+                    show: false,
+                    webPreferences: {
+                        nativeWindowOpen: true,
+                        webSecurity: false,
+                        allowRunningInsecureContent: true,
+                        enableRemoteModule: true,
+                        preload: path.join(__dirname, 'preload.js'), // use a preload script
+                    },
+                })
+                this.winG.setKiosk(false);
+                this.winG.removeMenu();
+                this.winG.once('ready-to-show', () => this.winG.show());
+                this.winG.on('closed', (event) => {
+                    this.winG = null;
+                });
+                if (!options.webContents) {
+                    const loadOptions = {
+                        httpReferrer: referrer
+                    }
+                    if (postBody != null) {
+                        const { data, contentType, boundary } = postBody
+                        loadOptions.postData = postBody.data
+                        loadOptions.extraHeaders = `content-type: ${contentType}; boundary=${boundary}`
+                    }
+
+                    this.winG.loadURL(url, loadOptions) // existing webContents will be navigated automatically
+                }
+                event.newGuest = this.winG
             });
-            if (!options.webContents) {
-              const loadOptions = {
-                httpReferrer: referrer
-              }
-              if (postBody != null) {
-                const { data, contentType, boundary } = postBody
-                loadOptions.postData = postBody.data
-                loadOptions.extraHeaders = `content-type: ${contentType}; boundary=${boundary}`
-              }
-          
-              this.winG.loadURL(url, loadOptions) // existing webContents will be navigated automatically
-            }
-            event.newGuest = this.winG
-          });
         }
 
         //   win.webContents.on(
@@ -334,18 +422,18 @@ class MainProcess {
         //   )
         /*win.webContents.on('frame-created', (event, details)=>{
             console.log('iframe');
-            
+
         });*/
         /*win.webContents.on('dom-ready', () => {
-  
+
             // we can get its URL and display it in the console
             let currentURL = win.getURL()
             console.log('currentURL is : ' + currentURL)
-          
+
             // same thing about the title of the page
-            let titlePage = win.getTitle()  
+            let titlePage = win.getTitle()
             console.log('titlePage is : ' + titlePage)
-          
+
             // executing Javascript into the webview to get the full HTML
             win.webContents.executeJavaScript(`function gethtml () {
               return new Promise((resolve, reject) => { resolve(document.documentElement.innerHTML); });
@@ -354,7 +442,7 @@ class MainProcess {
         //   console.log(html);
               // sending the HTML to the function extractLinks
             //   extractLinks(html)
-            })  
+            })
           })*/
 
         // win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
@@ -383,7 +471,7 @@ class MainProcess {
         if (!this.isOnline) {
             // windowItem.url = windowItem.offlineUrl;
             this.isRedirectedToError = true;
-        }      
+        }
 
     }
 
@@ -396,16 +484,16 @@ class MainProcess {
     }
 
     _createWindow({
-        width,
-        height,
-        kiosk,
-        title,
-        frame,
-        preload,
-        x = 0,
-        y = 0,
-        preference = null,
-    }) {
+                      width,
+                      height,
+                      kiosk,
+                      title,
+                      frame,
+                      preload,
+                      x = 0,
+                      y = 0,
+                      preference = null,
+                  }) {
         return new BrowserWindow({
             width,
             height,
@@ -467,8 +555,19 @@ class MainProcess {
         }
     }
 
+    saveSettingsInit(event, arg) {
+        _logger.log(`isOnline: `, arg);
+        // event, arg
+        fs.writeFileSync(
+            `${this.workDirectory}/settings.json`,
+            JSON.stringify(arg, null, '\t')
+        );
+
+    }
+
     saveSettings(event, arg) {
-        // event, arg        
+
+        // event, arg
         fs.writeFileSync(
             `${this.workDirectory}/settings.json`,
             JSON.stringify(arg.data, null, '\t')
@@ -477,7 +576,7 @@ class MainProcess {
             ...this.settings,
             ...arg.data,
         };
-        
+
         const oldWindows = [].concat(this.windows);
         // this.windows = [];
         this.clearCache();
@@ -490,6 +589,41 @@ class MainProcess {
         oldWindows.forEach((item) => {
             item.close();
         });
+
+        if(this.settings.kasse == false)
+        {
+            process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+            axios.get("https://vr-ekiosk.app/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
+                console.log(res);
+                if((typeof res.data != "undefined")&&(typeof res.data.location != "undefined"))
+                {
+                    var expiration = new Date();
+                    var hour = expiration.getHours() + 24;
+                    expiration.setHours(hour);
+                    this.settings.urls[0].url = res.data.location;
+                    const cookie_arr = [
+                        { url: res.data.location, name: 'kasse_id', value: res.data.kasse_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'kasse_user_id', value: res.data.kasse_user_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'terminal_id', value: res.data.terminal_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'partner_id', value: res.data.partner_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'kunde_id', value: res.data.kunde_id.toString(), 'path':'/', expirationDate: expiration.getTime()},
+                        { url: res.data.location, name: 'filial_id', value: res.data.filial_id.toString(), 'path':'/', expirationDate: expiration.getTime()}
+                    ];
+
+                    session.defaultSession.clearStorageData();
+                    cookie_arr.forEach((cookie)=>{
+                        session.defaultSession.cookies.set(cookie)
+                            .then(() => {
+                                // success
+                            }, (error) => {
+                                console.error(error)
+                            })
+                    });
+                }
+            }).catch(error => console.log(error));
+        } else {
+            session.defaultSession.clearStorageData();
+        }
 
         //setTimeout(() => this.openSettings(), 10);
 
