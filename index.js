@@ -62,7 +62,7 @@ class MainProcess {
         this.isDev = isDev;
         this.workDirectory = workDirectory(this.isDev);
         this.app.setAppUserModelId('TN Browser');
-        this.updateWin = null; // used ./processComponents/initUpdates.js
+        this.updateWin =  './processComponents/initUpdates.js';
         this.printWin = null;
         this.winG = null;
         this.win = null;
@@ -143,11 +143,10 @@ class MainProcess {
                     ...settings,
                     isOnline: this.isOnline,
                 };
-
                 if(this.settings.kasse == false)
                 {
                     process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
-                    axios.get("https://vr-kiosk.hosting10-plesk.tn-rechenzentrum1.de/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
+                    axios.get("https://vr-ekiosk.app/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
                         console.log(res);
                         if((typeof res.data != "undefined")&&(typeof res.data.location != "undefined"))
                         {
@@ -208,10 +207,9 @@ class MainProcess {
                 isDev: false,
                 urls: [
                     {
-                        url: "https://vr-kiosk.hosting10-plesk.tn-rechenzentrum1.de",
+                        url: "https://vr-ekiosk.app",
                         displayId: 0,
-                        offlineUrl: "http://error.hosting10-plesk.tn-rechenzentrum1.de/",
-                        websiteUrl: "https://oksana.vr-kiosk.hosting11-plesk.tn-rechenzentrum1.de",
+                        offlineUrl: "http://error.tn-kiosk.de/",
                         zoom: 1
                     }
                 ],
@@ -224,11 +222,11 @@ class MainProcess {
                 checkOnlineUrl: "www.google.com",
                 VRKiosk: true,
                 isOnline: true,
-                kasse: true
+                kasse: false
             };
             this.saveSettingsInit('init', arr);
             process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
-            axios.get("https://vr-kiosk.hosting10-plesk.tn-rechenzentrum1.de/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
+            axios.get("https://vr-ekiosk.app/tntools/get_kiosk_cookies.php?name="+this.hostName).then((res) => {
                 if((typeof res.data != "undefined")&&(typeof res.data.location != "undefined"))
                 {
                     var expiration = new Date();

@@ -1,6 +1,6 @@
 {
     "name": "tn-browser",
-    "version": "1.0.44",
+    "version": "1.0.45",
     "description": "Private Browser",
     "main": "index.js",
     "scripts": {
@@ -32,8 +32,8 @@
         "publish": [
             {
                 "provider": "github",
-                "owner": "ivaninja",
-                "repo": "TN_browser"
+                "owner": "OksanaTN",
+                "repo": "TNBrowserGit"
             }
         ],
         "win": {

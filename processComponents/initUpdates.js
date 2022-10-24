@@ -1,14 +1,23 @@
 const {autoUpdater} = require("electron-updater");
 const { ipcMain } = require('electron');
+let { currentVersion } = '';
+currentVersion = require('../package.json').version; 
+const server = 'https://github.com/OksanaTN/TNBrowserGit/'
+const url = `${server}/update/github/${currentVersion}`
+
+autoUpdater.setFeedURL({
+	provider: 'github', owner: 'OksanaTN', repo: 'TNBrowserGit', token: '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'
+ });
 
 module.exports = function () {
+	 
     this.autoUpdater = autoUpdater;
     this.ipcMain = ipcMain;
     this.innerSettings = this.settings;
-    if (this.isDev || !this.isOnline) {
+  /*  if (this.isDev || !this.isOnline) {
         this.start({});
         return
-    }
+    }*/
 
     this.autoUpdater.on('checking-for-update', () => {
         this.updateWin.webContents.send('message', {action: 'checkingForUpdate', data: ''});
@@ -18,7 +27,7 @@ module.exports = function () {
         this.updateWin.webContents.send('message', {action: 'updateAvailable', data: ''});
     });
 
-    this.autoUpdater.on('update-not-available', (info) => {
+    this.autoUpdater.on('update-not-available', (info) => {		 
         this.start({});
         this.updateWin.close();
     });
