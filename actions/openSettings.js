@@ -1,3 +1,6 @@
+const { BrowserWindow, BrowserView } = require('electron');
+
 module.exports = function(event, arg) {
-    this.windows[0].loadFile('./settings.html');
+
+    BrowserWindow.getFocusedWindow().loadFile('./settings.html');
 }

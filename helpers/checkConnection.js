@@ -1,12 +1,21 @@
-const dns = require("dns");
+var ping   = require('ping');
+var spawn = require('child_process').spawn;
 
-function checkConnection(hostname = `www.google.com`) {
+
+var checkConnection = function(settings){
     return new Promise((resolve, reject) => {
-        dns.resolve(hostname, function (err, addr) {
-            let isConnected = (err === null);
-            resolve(isConnected);
-        });
-    });
-}
+        let host = settings.urls[0].url.replace('https://', '').replace('http://', '');
+        var end_url = host.slice(-1);
+        if(end_url === '/') {
+            host = host.substr(0, (host.length - 1));
+        }
 
-module.exports = checkConnection;
+        ping.sys.probe(host, function (isAlive) {
+            var msg = isAlive ? 1 : 0;
+            console.info("CONNECTION HOST: "+host + '; msg ' + msg)
+                resolve(msg);
+        }, {timeout: 5000});
+    });
+};
+
+module.exports = exports = checkConnection;

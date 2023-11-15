@@ -12,6 +12,7 @@ class AppView {
         this.ipcRenderer = ipcRenderer;
         this.displays = [];
         this.printers = [];
+        this.cookies = [];
         this.preference = this.win.webContents.browserWindowOptions.preference;
 
         this.css = `
@@ -51,9 +52,11 @@ class AppView {
     }
 
     async init(event, arg) {
+
         this.settings = arg.settings;
         this.displays = arg.displays;
         this.printers = arg.printers;
+        this.cookies = arg.cookies;
         this.win.setTitle(this.settings.title);
         window.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -63,9 +66,10 @@ class AppView {
             ipcRenderer.send('print', document.body.innerHTML, 'default');
         };
 
-        // console.log(`typeof print_check:`, typeof print_check)
+        console.log(`typeof print_check:`, typeof print_check)
         if (typeof print_check === 'function') {
             window.print_check = (html) => {
+                console.log('11111')
                 ipcRenderer.send('print', html, 'default');
             };
         }
@@ -141,12 +145,18 @@ class AppView {
         ipcRenderer.send('request-mainprocess-action', {
             action: 'getSettings',
         });
+        ipcRenderer.on('messageCookies', (event, message)=>{
+            console.info(message)
+            this.cookiesdiv.innerHTML = message;
+        });
+
     }
 
     addPageListeners() {
+
         const selector = document.querySelector('#closeapp');
 
-        if (selector) 
+        if (selector)
             selector.remove();
 
         const css = document.createElement('link');
@@ -162,12 +172,12 @@ class AppView {
             '%_MARGIN_%',
             this.settings.buttonMargin || '10px'
         );
-        
+
         const test = this.settings.buttonMargin.replace(/px/g, '').split(' ');
         let top = Number(test[0]);
         let right = (positions[this.settings.buttonPosition]==
-        positions.TOP_RIGHT || positions[this.settings.buttonPosition]==
-        positions.BOTTOM_RIGHT) ? Number(test[1])+50 : Number(test[1]);
+            positions.TOP_RIGHT || positions[this.settings.buttonPosition]==
+            positions.BOTTOM_RIGHT) ? Number(test[1])+50 : Number(test[1]);
         let bottom = Number(test[2]);
         let left = (positions[this.settings.buttonPosition]==
             positions.TOP_LEFT  || positions[this.settings.buttonPosition]==
@@ -187,12 +197,12 @@ class AppView {
         this.css = this.css.replace(
             '%_POSITION_%',
             positions[this.settings.buttonPosition] ||
-                positions.TOP_RIGHT
+            positions.TOP_RIGHT
         );
         this.css = this.css.replace(
             '%_POSITIONOFFLINE_%',
             positions[this.settings.buttonPosition] ||
-                positions.TOP_RIGHT
+            positions.TOP_RIGHT
         );
 
         css.setAttribute(
@@ -201,23 +211,23 @@ class AppView {
         );
         document.head.appendChild(css);
         if ((this.preference.url.indexOf("display")==-1) && this.settings.showMinimizeButton) {
-                const control = document.createElement('div');
-                control.setAttribute('class', 'control-container');
-                control.setAttribute('data-selector', 'control-container');
-                document.body.appendChild(control);
+            const control = document.createElement('div');
+            control.setAttribute('class', 'control-container');
+            control.setAttribute('data-selector', 'control-container');
+            document.body.appendChild(control);
 
-                control.addEventListener('click', () => {
-                    const value = !this.win.isKiosk();
-                    this.win.setKiosk(value);
+            control.addEventListener('click', () => {
+                const value = !this.win.isKiosk();
+                this.win.setKiosk(value);
 
-                    if (value) {
-                        control.classList.remove('minimized');
-                    } else {
-                        control.classList.add('minimized');
-                    }
-                });
-            }
-            
+                if (value) {
+                    control.classList.remove('minimized');
+                } else {
+                    control.classList.add('minimized');
+                }
+            });
+        }
+
         if ((this.preference.url.indexOf("display") ==-1) && (this.settings.showOfflineButton))
         {
             const offline_btn = document.createElement('div');
@@ -234,8 +244,8 @@ class AppView {
         window.addEventListener(
             'keydown',
             (e) => {
-                if (e.keyCode === 83 && e.altKey && e.ctrlKey) {
-                    //CTRL+ALT+S
+                if (e.keyCode === 83 && e.shiftKey && e.ctrlKey) {
+                    //CTRL+SHIFT+S
                     ipcRenderer.send('request-mainprocess-action', {
                         action: 'openSettings',
                     });

@@ -6,8 +6,10 @@ function loaded(node) {
     });
 }
 
+
 ipcRenderer.on('setContent', async (event, content, printer) => {
     document.write(content);
+
     let images = document.querySelectorAll(`img`);
 
     let promises = [...images].map((img) => loaded(img));

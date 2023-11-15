@@ -1,3 +1,10 @@
+
+
 module.exports = function(event, arg) {
-    this.isOnline ? this.windows[0].loadURL(this.settings.urls[0].url) : this.windows[0].loadURL(this.settings.urls[0].offlineUrl) ;    
+    let i=0;
+    this.settings.urls.forEach((windowItem, index) => {
+        this.isOnline ? this.windows[i].loadURL(this.settings.urls[i].url) : this.windows[i].loadURL(this.settings.urls[i].offlineUrl) ;
+        i++;
+    });
+
 }

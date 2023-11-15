@@ -35,6 +35,7 @@ class AppViewSettings {
         };
 
         this.displays = _APP_.displays;
+
         this.printers = _APP_.printers.map(a => a.name);
         this.settings = settings;
 
@@ -47,16 +48,23 @@ class AppViewSettings {
         this.whiteurlInput = document.querySelector('[data-selector="whiteurl"]');
         this.ticketPrinter = document.querySelector('[data-selector="ticketPrinter"]');
         this.versionInfo = document.querySelector('[data-selector="versionInfo"]');
+        this.deviceInfo = document.querySelector('[data-selector="deviceInfo"]');
+        this.cookiesDiv = document.querySelector('[data-selector="cookies-div"]');
 
-
+        this.cookiesDiv.innerHTML = '<h4>Cookies: </h4> ' + _APP_.cookies
         this.init();
     }
 
     init() {
 
-        this.cancelSelector.addEventListener('click', () => {
-            _APP_.ipcRenderer.send('request-mainprocess-action', {action: 'cancelSettings', data: this.model});
-        })
+
+
+            this.cancelSelector.addEventListener('click', () => {
+                _APP_.ipcRenderer.send('request-mainprocess-action', {action: 'cancelSettings', data: this.model});
+             })
+
+
+
 
         const submodels = document.querySelectorAll('[submodel]');
 
@@ -152,6 +160,9 @@ class AppViewSettings {
                     _APP_.ipcRenderer.send('request-mainprocess-action', {action: 'saveSettings', data: this.model});
                 })
         this.versionInfo.innerHTML = this.settings.version
+        this.deviceInfo.innerHTML = this.settings.title
+
+
     }
 
     getZoom(value) {
@@ -323,3 +334,52 @@ class AppViewSettings {
 window.addEventListener('settings', (e) => {
     new AppViewSettings(e.detail);
 })
+
+function openTab(evt, tabName) {
+    var isShow = false;
+    var res = '';
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    if(tabName == 'tab2'){
+        document.getElementById("popup1").className = "overlay active";
+    } else {
+        document.getElementById("popup1").className = "overlay";
+        isShow = true;
+    }
+    if(isShow) {
+
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+}
+
+function checkPassword(){
+    var pwd = document.getElementById("kiosk_password").value;
+    if(pwd == '02telenorma22'){
+        document.getElementById("kiosk_password").value = "";
+        document.getElementById("popup1").className = "overlay";
+        document.getElementById("tab2").style.display = "block";
+        document.getElementById("tab2").className += " active";
+    } else {
+        document.getElementById("kiosk_password").value = "";
+        document.getElementById("pwd_error").innerHTML = "Falsches Passwort";
+    }
+}
+
+function closePopup(){
+    document.getElementById("kiosk_password").value = "";
+    document.getElementById("popup1").className = "overlay";
+    document.getElementById("tab1").style.display = "block";
+    document.getElementById("tab1").className += " active";
+}
+
+mainWindow.on("system-context-menu", (event, _point) => {
+    event.preventDefault();
+});

@@ -33,10 +33,10 @@ module.exports = function ({ workDirectory, version, isDev }) {
         version,
         printFont: 'Arial',
         whitelist : [],
-        ticketPrinter: 'Microsoft Print to PDF',
+        ticketPrinter: 'Boca BIDI FGL 26/46 200 DPI',
         changeFont:true,
         guestwidth:1020,
-        guestheight:925,
+        guestheight:1300,
         checkOnlineUrl:'www.google.com',
         VRKiosk:false
     };

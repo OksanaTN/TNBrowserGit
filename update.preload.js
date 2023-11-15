@@ -8,6 +8,7 @@ class UpdatePreload {
         this.progressSelector = document.querySelector('#progress');
         this.checkSelector = document.querySelector('#check');
         this.versiondiv = document.querySelector('#version-text');
+        this.cookiesdiv = document.querySelector('#version-text');
 
         ipcRenderer.send('variable-request', ['version']);
 
@@ -20,15 +21,22 @@ class UpdatePreload {
         ipcRenderer.on('version', (event, message)=>{
             this.versiondiv.innerHTML = message.version;
         });
+        console.log(`typeof restart_browser11:`, typeof restart_browser)
+        if (typeof restart_browser === 'function') {
+            window.restart_browser = (url) => {
+                ipcRenderer.send('restartBrowser', url);
+            };
+        }
     }
 
     checkingForUpdate() {
-
+        console.info("checking for update works")
     }
 
     cheking() {
 
     }
+
 
     updateAvailable() {
         // this.checkTextSelector.innerTEXT = 'Update available, start to download...';
@@ -43,10 +51,13 @@ class UpdatePreload {
         this.progressbarSelector.style.height = '100%';
     }
 
-}
 
+
+}
 window.addEventListener('load', () => {
+    console.log('-----')
     new UpdatePreload();
 });
+
 
 
